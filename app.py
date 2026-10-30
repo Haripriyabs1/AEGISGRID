@@ -204,12 +204,14 @@ if "flisr_result" not in st.session_state:
 if "history_log" not in st.session_state:
     st.session_state.history_log = []
 
-# Load models if available
-if not ai_engine.is_trained(st.session_state.active_net.meta_network_name):
+# Load models if available, or train on the fly if unpickling fails in this environment
+models_loaded = False
+if ai_engine.is_trained(st.session_state.active_net.meta_network_name):
+    models_loaded = ai_engine.load_models(st.session_state.active_net.meta_network_name)
+
+if not models_loaded:
     with st.spinner("Initializing and training baseline AI diagnostic models..."):
         ai_engine.train_models(st.session_state.active_net, num_scenarios_per_line=4)
-else:
-    ai_engine.load_models(st.session_state.active_net.meta_network_name)
 
 
 # =============================================================================
@@ -266,11 +268,12 @@ with st.sidebar:
         st.session_state.fault_net = None
         st.session_state.fault_results = None
         st.session_state.flisr_result = None
-        if not ai_engine.is_trained(st.session_state.active_net.meta_network_name):
+        models_loaded = False
+        if ai_engine.is_trained(st.session_state.active_net.meta_network_name):
+            models_loaded = ai_engine.load_models(st.session_state.active_net.meta_network_name)
+        if not models_loaded:
             with st.spinner("Training models for chosen network..."):
                 ai_engine.train_models(st.session_state.active_net, num_scenarios_per_line=4)
-        else:
-            ai_engine.load_models(st.session_state.active_net.meta_network_name)
         st.rerun()
 
     st.markdown("---")
